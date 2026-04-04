@@ -18,8 +18,8 @@ type Exercise = {
   sql: string
 }
 
-const SQL_WASM_PATH = '/sql-wasm.wasm'
-const DEFAULT_DB_PATH = '/sf_accounting.db'
+const SQL_WASM_PATH = `${import.meta.env.BASE_URL}sql-wasm.wasm`
+const DEFAULT_DB_PATH = `${import.meta.env.BASE_URL}sf_accounting.db`
 const INSTRUCTOR_PIN = '7425'
 const MAX_SEED = 100
 
