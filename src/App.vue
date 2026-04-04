@@ -1,53 +1,67 @@
 <template>
   <v-app>
     <v-main class="app-shell">
-      
-      <v-container class="py-4" style="max-width: 1180px; padding-left: 16px; padding-right: 16px;">
+      <v-container
+        class="py-4"
+        style="max-width: 1180px; padding-left: 16px; padding-right: 16px;"
+      >
         <div class="hero-wrap mb-4">
-  <HeroSection />
-  <div class="image-center">
-    <img src="/frontpage.png" alt="Cover" class="front-image" />
-  </div>
-</div>
-        
-        <div class="toolbar-wrap mb-4">
-          <ControlPanel
-            :seed-input="seedInput"
-            :solved-count="solvedCount"
-            :exercise-count="exercises.length"
-            @build-exercises="() => buildExercises(seedInput)"
-            @toggle-instructor="toggleInstructorMode"
-            @run-sql="runSql"
-            @refresh-schema="renderSchema"
-            @update:seed-input="seedInput = $event"
-          />
+          <HeroSection />
+          <div class="image-center">
+            <img src="/frontpage.gif" alt="Cover" class="front-image" />
+          </div>
         </div>
 
+        <!-- Row 1: Seed / summary panel + Schema Browser -->
         <v-row class="pane-grid" dense>
           <v-col cols="12" md="6">
-            <div class="pane-wrap">
-              <SqlEditorCard
-                v-model="editorText"
-                @run-sql="runSql"
+            <div class="toolbar-wrap top-pane">
+              <ControlPanel
+                :seed-input="seedInput"
+                :solved-count="solvedCount"
+                :exercise-count="exercises.length"
+                @build-exercises="() => buildExercises(seedInput)"
+                @toggle-instructor="toggleInstructorMode"
+                @update:seed-input="seedInput = $event"
               />
             </div>
           </v-col>
 
           <v-col cols="12" md="6">
-  <SchemaCard :schema-text="schemaText" />
-</v-col>
+            <div class="pane-wrap top-pane">
+              <SchemaCard :schema-text="schemaText" />
+            </div>
+          </v-col>
+        </v-row>
 
-<v-col cols="12" md="6">
+        <!-- Row 2: Editor + Results stacked, Exercises on the right -->
+        <v-row class="pane-grid mt-1" dense>
+          <v-col cols="12" md="8">
+            <v-row class="pane-grid" dense>
+              <v-col cols="12">
+                <div class="pane-wrap bottom-pane-half editor-pane">
+  <SqlEditorCard
+    v-model="editorText"
+    @run-sql="runSql"
+  />
+</div>
+              </v-col>
+
+              <v-col cols="12">
+                <div class="pane-wrap bottom-pane-half results-pane">
   <ResultsCard
     :last-results="lastResults"
     :result-error="resultError"
     :has-run-once="hasRunOnce"
     :result-summary="resultSummary"
   />
-</v-col>
+</div>
+              </v-col>
+            </v-row>
+          </v-col>
 
-          <v-col cols="12" md="6">
-            <div class="pane-wrap">
+          <v-col cols="12" md="4">
+            <div class="pane-wrap bottom-pane-tall">
               <ExercisesCard
                 :exercises="exercises"
                 :current-seed="currentSeed"
@@ -79,7 +93,6 @@ import ExercisesCard from './components/ExercisesCard.vue'
 import { useSqlLab } from './composables/useSqlLab'
 
 const {
-  dbUrl,
   seedInput,
   currentSeed,
   instructorMode,
@@ -92,14 +105,9 @@ const {
   expandedExpected,
   exerciseStatus,
   solvedCount,
-  loadDefaultDb,
-  resetDb,
-  loadDbFromUrl,
-  handleDbFileChange,
   buildExercises,
   toggleInstructorMode,
   runSql,
-  renderSchema,
   exportAnswerKey,
   checkExercise,
   toggleExpected,
@@ -133,9 +141,29 @@ const resultSummary = computed(() => {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
 }
 
+.toolbar-wrap,
 .pane-wrap {
-  min-height: 320px;
   overflow: hidden;
+}
+
+.top-pane {
+  min-height: 320px;
+  height: 100%;
+}
+
+.bottom-pane-half.editor-pane {
+  min-height: 220px;
+  height: 100%;
+}
+
+.bottom-pane-half.results-pane {
+  min-height: 290px;
+  height: 100%;
+}
+
+.bottom-pane-tall {
+  min-height: 522px;
+  height: 100%;
 }
 
 .pane-grid {

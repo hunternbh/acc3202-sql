@@ -1,8 +1,22 @@
 <template>
   <v-card class="pane-card" rounded="xl" elevation="0">
-    <v-card-title class="pane-title d-flex justify-space-between align-center">
-      <span>Query Editor</span>
-      <span class="pane-meta">SQLite / SQL.js</span>
+    <v-card-title class="pane-title">
+      <div class="title-row">
+        <span>Query Editor</span>
+
+        <div class="title-actions">
+          <span class="pane-meta">SQLite / SQL.js</span>
+          <v-btn
+            size="small"
+            color="primary"
+            variant="flat"
+            class="run-btn"
+            @click="$emit('run-sql')"
+          >
+            Run
+          </v-btn>
+        </div>
+      </div>
     </v-card-title>
 
     <v-card-text class="editor-wrap pa-5">
@@ -21,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   modelValue: string
 }>()
 
@@ -49,11 +63,32 @@ function handleKeydown(e: KeyboardEvent) {
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
   font-size: 14px;
   font-weight: 700;
+  padding: 14px 16px;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.title-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .pane-meta {
   font-size: 12px;
   color: rgba(229, 231, 235, 0.55);
+}
+
+.run-btn {
+  text-transform: none;
+  font-weight: 700;
 }
 
 .editor-wrap {

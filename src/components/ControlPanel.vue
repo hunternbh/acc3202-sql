@@ -1,6 +1,6 @@
 <template>
   <v-card class="toolbar-card" rounded="xl" elevation="0">
-    <v-card-text class="toolbar-root compact-two">
+    <v-card-text class="toolbar-root">
       <div class="toolbar-group">
         <div class="group-label">Exercises</div>
 
@@ -31,15 +31,6 @@
         <div class="score-box">
           Score: {{ solvedCount }} / {{ exerciseCount }}
         </div>
-      </div>
-
-      <div class="toolbar-group">
-        <div class="group-label">Run</div>
-
-        <div class="group-row">
-          <v-btn color="cyan-darken-2" @click="$emit('run-sql')">Run SQL</v-btn>
-          <v-btn variant="outlined" @click="$emit('refresh-schema')">Refresh Schema</v-btn>
-        </div>
 
         <div class="help-line">
           Press Ctrl/⌘ + Enter in the editor.
@@ -59,8 +50,6 @@ defineProps<{
 defineEmits([
   'build-exercises',
   'toggle-instructor',
-  'run-sql',
-  'refresh-schema',
   'update:seed-input',
 ])
 </script>
@@ -75,10 +64,7 @@ defineEmits([
 .toolbar-root {
   display: grid;
   gap: 14px;
-}
-
-.compact-two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .toolbar-group {
@@ -95,14 +81,6 @@ defineEmits([
   margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-}
-
-.group-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
 }
 
 .seed-panel {
@@ -144,17 +122,12 @@ defineEmits([
   border-radius: 12px;
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(148, 163, 184, 0.12);
+  margin-bottom: 10px;
 }
 
 :deep(.v-field) {
   background: rgba(15, 23, 42, 0.72);
   border-radius: 12px;
-}
-
-@media (max-width: 900px) {
-  .compact-two {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 640px) {
