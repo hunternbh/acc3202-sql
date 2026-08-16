@@ -20,7 +20,6 @@ type Exercise = {
 
 const SQL_WASM_PATH = `${import.meta.env.BASE_URL}sql-wasm.wasm`
 const DEFAULT_DB_PATH = `${import.meta.env.BASE_URL}sf_accounting.db`
-const EASTER_EGG_CODE = '32022'
 const MAX_SEED = 50
 
 export function useSqlLab() {
@@ -430,17 +429,6 @@ ORDER BY account_no;`,
     await navigator.clipboard.writeText(sql.trim())
   }
 
-  function toggleInstructorMode() {
-    const code = prompt('Enter Easter Egg code:')
-    if (code === EASTER_EGG_CODE) {
-      alert(
-        'Easter Egg unlocked. The code is joyful-learning. Put joyful-learning at the top of your assignment to unlock more lenient grading.',
-      )
-    } else {
-      alert('Not quite. Keep exploring.')
-    }
-  }
-
   function exportAnswerKey() {
     const lines: string[] = []
     lines.push(['seed', 'qid', 'title', 'sql', 'columns', 'rows_json'].join(','))
@@ -495,7 +483,6 @@ ORDER BY account_no;`,
     loadDbFromUrl,
     handleDbFileChange,
     generateExercises,
-    toggleInstructorMode,
     runSql,
     renderSchema,
     exportAnswerKey,

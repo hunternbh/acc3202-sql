@@ -34,7 +34,6 @@
                 :solved-count="solvedCount"
                 :exercise-count="exercises.length"
                 @generate-exercises="generateExercises"
-                @toggle-instructor="toggleInstructorMode"
                 @update:student-name="studentName = $event"
               />
             </div>
@@ -115,7 +114,6 @@ const {
   exerciseStatus,
   solvedCount,
   generateExercises,
-  toggleInstructorMode,
   runSql,
   exportAnswerKey,
   checkExercise,

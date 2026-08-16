@@ -23,7 +23,7 @@
             <v-btn color="teal-darken-2" @click="$emit('generate-exercises')">
               Generate Questions
             </v-btn>
-            <v-btn variant="outlined" @click="$emit('toggle-instructor')">
+            <v-btn variant="outlined" @click="openEasterEgg">
               Easter Egg
             </v-btn>
           </div>
@@ -42,10 +42,47 @@
         </div>
       </div>
     </v-card-text>
+
+    <v-dialog v-model="eggDialog" max-width="440">
+      <v-card class="egg-card" rounded="lg">
+        <v-card-title class="egg-title">Easter Egg</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-if="!eggUnlocked"
+            v-model="eggCode"
+            label="Enter code"
+            variant="outlined"
+            density="comfortable"
+            autofocus
+            hide-details
+            @keyup.enter="checkEasterEgg"
+          />
+
+          <div v-else class="egg-message">
+            Easter Egg unlocked. The code is <span>joyful-learning</span>. Put joyful-learning at
+            the top of your assignment to unlock more lenient grading.
+          </div>
+
+          <div v-if="eggError" class="egg-error" role="alert">
+            {{ eggError }}
+          </div>
+        </v-card-text>
+
+        <v-card-actions class="egg-actions">
+          <v-spacer />
+          <v-btn variant="text" @click="eggDialog = false">Close</v-btn>
+          <v-btn v-if="!eggUnlocked" color="teal-darken-2" @click="checkEasterEgg">
+            Unlock
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
   studentName: string
   nameError: string
@@ -55,9 +92,31 @@ defineProps<{
 
 defineEmits([
   'generate-exercises',
-  'toggle-instructor',
   'update:student-name',
 ])
+
+const eggDialog = ref(false)
+const eggCode = ref('')
+const eggUnlocked = ref(false)
+const eggError = ref('')
+const eggKey = '32022'
+
+function openEasterEgg() {
+  eggCode.value = ''
+  eggError.value = ''
+  eggUnlocked.value = false
+  eggDialog.value = true
+}
+
+function checkEasterEgg() {
+  if (eggCode.value.trim() === eggKey) {
+    eggUnlocked.value = true
+    eggError.value = ''
+    return
+  }
+
+  eggError.value = 'Not quite. Keep exploring.'
+}
 </script>
 
 <style scoped>
@@ -139,6 +198,37 @@ defineEmits([
 :deep(.v-field) {
   background: rgba(15, 23, 42, 0.72);
   border-radius: 12px;
+}
+
+.egg-card {
+  background: #111827;
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.egg-title {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.egg-message {
+  color: rgba(229, 231, 235, 0.86);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.egg-message span {
+  color: #cffafe;
+  font-weight: 800;
+}
+
+.egg-error {
+  margin-top: 10px;
+  color: #fecaca;
+  font-size: 13px;
+}
+
+.egg-actions {
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 @media (max-width: 640px) {
