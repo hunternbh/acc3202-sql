@@ -21,11 +21,12 @@ type Exercise = {
 const SQL_WASM_PATH = `${import.meta.env.BASE_URL}sql-wasm.wasm`
 const DEFAULT_DB_PATH = `${import.meta.env.BASE_URL}sf_accounting.db`
 const INSTRUCTOR_PIN = '7425'
-const MAX_SEED = 100
+const MAX_SEED = 50
 
 export function useSqlLab() {
   const dbUrl = ref('')
-  const seedInput = ref(1)
+  const studentName = ref(localStorage.getItem('sf_student_name') || '')
+  const nameError = ref('')
   const currentSeed = ref(1)
   const instructorMode = ref(false)
 
@@ -116,7 +117,11 @@ ORDER BY name;`)
     lastResults.value = []
     resultError.value = ''
     hasRunOnce.value = false
-    buildExercises(seedInput.value)
+    if (studentName.value.trim()) {
+      generateExercises()
+    } else {
+      exercises.value = []
+    }
   }
 
   function resetDb() {
@@ -216,6 +221,35 @@ ORDER BY name;`)
     return a + Math.floor(rng() * (b - a + 1))
   }
 
+  function firstNameToSeed(name: string) {
+    const normalized = name
+      .trim()
+      .toLocaleLowerCase()
+      .normalize('NFKD')
+      .replace(/\p{M}/gu, '')
+
+    let hash = 0
+    for (const character of normalized) {
+      hash = (Math.imul(hash, 31) + (character.codePointAt(0) || 0)) >>> 0
+    }
+
+    return (hash % MAX_SEED) + 1
+  }
+
+  function generateExercises() {
+    const name = studentName.value.trim()
+    if (!name) {
+      nameError.value = 'Enter your first name to generate your questions.'
+      exercises.value = []
+      return
+    }
+
+    nameError.value = ''
+    studentName.value = name
+    localStorage.setItem('sf_student_name', name)
+    buildExercises(firstNameToSeed(name))
+  }
+
   function execFirstResult(sqlText: string): { columns: string[]; rows: unknown[][] } {
     if (!db) return { columns: [], rows: [] }
 
@@ -263,7 +297,9 @@ ORDER BY name;`)
     }
 
     currentSeed.value = Math.min(Math.max(Number(seed) || 1, 1), MAX_SEED)
-    seedInput.value = currentSeed.value
+
+    Object.keys(exerciseStatus).forEach((key) => delete exerciseStatus[key])
+    Object.keys(expandedExpected).forEach((key) => delete expandedExpected[key])
 
     const rng = makeRng(currentSeed.value)
 
@@ -293,18 +329,11 @@ ORDER BY name;`)
     const vendor = choice(rng, vendors)
     const cutMonth = choice(rng, months)
 
-    const maxSlice = Math.min(4, months.length)
-    const minSlice = Math.min(2, maxSlice)
-    const sliceLen = intBetween(rng, minSlice, maxSlice)
-
-    const startIdx = intBetween(rng, 0, Math.max(0, months.length - sliceLen))
-    const chosenSlice = months.slice(startIdx, startIdx + sliceLen)
-
-    exercises.value = [
+    const questionSet: Exercise[] = [
       {
         id: `q1_${currentSeed.value}`,
-        title: `Cargo revenue at ${station} between ${ymA} and ${ymB} in ${currency}`,
-        prompt: `Return a single row with column cargo_rev showing total cargo revenue (account 4000) at station "${station}" where je_date between '${ymA}-01' and '${ymB}-31' and currency='${currency}'.`,
+        title: `Aggregate cargo revenue at ${station}`,
+        prompt: `Practice SUM, CASE, and ROUND. Return one column named cargo_rev with total cargo revenue (account 4000) at station "${station}" from ${ymA} through ${ymB}, using ${currency}.`,
         sql: `
 SELECT ROUND(SUM(CASE WHEN account_no=4000 THEN credit - debit ELSE 0 END),2) AS cargo_rev
 FROM sf_ledger
@@ -314,71 +343,39 @@ WHERE station = '${station}'
       },
       {
         id: `q2_${currentSeed.value}`,
-        title: `Top ${topN} vendors by total AP payments in ${cutMonth}`,
-        prompt: `List the top ${topN} vendors by payments (doc_type='PAYMENT') in month ${cutMonth}. Columns: party_id, total_paid (descending).`,
+        title: `Top ${topN} vendors in ${cutMonth}`,
+        prompt: `Practice COALESCE, COUNT, and ROUND. List the top ${topN} vendors paid in ${cutMonth}. Return vendor_name, payment_count, and total_paid, sorted by total_paid descending.`,
         sql: `
-SELECT party_id, ROUND(SUM(CASE WHEN account_no=1000 THEN credit - debit END),2) AS total_paid
-FROM sf_ledger
-WHERE doc_type='PAYMENT'
-  AND substr(je_date,1,7)='${cutMonth}'
-GROUP BY party_id
-ORDER BY total_paid DESC, party_id
+SELECT COALESCE(p.name, 'Unknown') AS vendor_name,
+       COUNT(DISTINCT l.doc_id) AS payment_count,
+       ROUND(SUM(CASE WHEN l.account_no=1000 THEN l.credit - l.debit ELSE 0 END),2) AS total_paid
+FROM sf_ledger AS l
+LEFT JOIN sf_parties AS p ON p.party_id = l.party_id
+WHERE l.doc_type='PAYMENT'
+  AND substr(l.je_date,1,7)='${cutMonth}'
+GROUP BY l.party_id, p.name
+ORDER BY total_paid DESC, vendor_name
 LIMIT ${topN};`,
       },
       {
         id: `q3_${currentSeed.value}`,
-        title: `Duplicate payments for vendor ${vendor[1]} (${vendor[0]})`,
-        prompt: `Find duplicate payments to vendor ${vendor[1]} (party_id=${vendor[0]}) where the same (date, amount) occurs more than once. Columns: je_date, amount, dup_count.`,
+        title: `Format vendor ${vendor[1]}`,
+        prompt: `Practice UPPER, TRIM, and LENGTH. For party_id ${vendor[0]}, return party_id, the trimmed name in uppercase as vendor_name, and the trimmed name length as name_length.`,
         sql: `
-WITH pay AS (
-  SELECT je_date,
-         ROUND(SUM(CASE WHEN account_no=1000 THEN credit - debit END),2) AS amount
-  FROM sf_ledger
-  WHERE doc_type='PAYMENT' AND party_id=${vendor[0]}
-  GROUP BY je_date, doc_id
-)
-SELECT je_date, amount, COUNT(*) AS dup_count
-FROM pay
-GROUP BY je_date, amount
-HAVING COUNT(*) > 1
-ORDER BY dup_count DESC, je_date;`,
-      },
-      {
-        id: `q4_${currentSeed.value}`,
-        title: `Gross margin over ${sliceLen} month(s): ${chosenSlice.join(', ')}`,
-        prompt: `Return ym, cargo_rev, cogs, gross_margin for months in (${chosenSlice.join(', ')}).`,
-        sql: `
-WITH m AS (
-  SELECT substr(je_date,1,7) AS ym,
-         SUM(CASE WHEN account_no=4000 THEN credit - debit ELSE 0 END) AS cargo_rev,
-         SUM(CASE WHEN account_no=5000 THEN debit - credit ELSE 0 END) AS cogs
-  FROM sf_ledger
-  WHERE substr(je_date,1,7) IN (${chosenSlice.map((m) => `'${m}'`).join(',')})
-  GROUP BY substr(je_date,1,7)
-)
-SELECT ym,
-       ROUND(cargo_rev,2) AS cargo_rev,
-       ROUND(cogs,2) AS cogs,
-       ROUND(cargo_rev - cogs,2) AS gross_margin
-FROM m
-ORDER BY ym;`,
-      },
-      {
-        id: `q5_${currentSeed.value}`,
-        title: `Weekend manual JEs in ${ymA}`,
-        prompt: `List weekend MANUAL_JE entries in ${ymA} with columns: je_id, je_date, total_debit, total_credit.`,
-        sql: `
-SELECT je_id, je_date,
-       ROUND(SUM(debit),2) AS total_debit,
-       ROUND(SUM(credit),2) AS total_credit
-FROM sf_ledger
-WHERE doc_type='MANUAL_JE'
-  AND substr(je_date,1,7)='${ymA}'
-  AND strftime('%w', je_date) IN ('0','6')
-GROUP BY je_id, je_date
-ORDER BY je_date, je_id;`,
+SELECT party_id,
+       UPPER(TRIM(name)) AS vendor_name,
+       LENGTH(TRIM(name)) AS name_length
+FROM sf_parties
+WHERE party_id=${vendor[0]};`,
       },
     ]
+
+    for (let i = questionSet.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rng() * (i + 1))
+      ;[questionSet[i], questionSet[j]] = [questionSet[j]!, questionSet[i]!]
+    }
+
+    exercises.value = questionSet
   }
 
   function checkExercise(exerciseId: string) {
@@ -471,7 +468,8 @@ ORDER BY je_date, je_id;`,
 
   return {
     dbUrl,
-    seedInput,
+    studentName,
+    nameError,
     currentSeed,
     instructorMode,
     editorText,
@@ -487,7 +485,7 @@ ORDER BY je_date, je_id;`,
     resetDb,
     loadDbFromUrl,
     handleDbFileChange,
-    buildExercises,
+    generateExercises,
     toggleInstructorMode,
     runSql,
     renderSchema,

@@ -2,29 +2,34 @@
   <v-card class="toolbar-card" rounded="xl" elevation="0">
     <v-card-text class="toolbar-root">
       <div class="toolbar-group">
-        <div class="group-label">Exercises</div>
+        <div class="group-label">Your question set</div>
 
         <div class="seed-panel">
-          <div class="seed-label">Seed</div>
+          <div class="seed-label">First name</div>
 
           <div class="seed-row">
             <v-text-field
-              :model-value="seedInput"
-              type="number"
-              min="1"
-              max="100"
+              :model-value="studentName"
+              type="text"
+              autocomplete="given-name"
+              placeholder="Enter your first name"
               variant="outlined"
               density="comfortable"
               hide-details
-              class="seed-input"
-              @update:model-value="$emit('update:seed-input', Number($event))"
+              class="name-input"
+              @keyup.enter="$emit('generate-exercises')"
+              @update:model-value="$emit('update:student-name', String($event ?? ''))"
             />
-            <v-btn color="teal-darken-2" @click="$emit('build-exercises')">
-              Build Set
+            <v-btn color="teal-darken-2" @click="$emit('generate-exercises')">
+              Generate Questions
             </v-btn>
             <v-btn variant="outlined" @click="$emit('toggle-instructor')">
               Instructor
             </v-btn>
+          </div>
+
+          <div v-if="nameError" class="name-error" role="alert">
+            {{ nameError }}
           </div>
         </div>
 
@@ -33,7 +38,7 @@
         </div>
 
         <div class="help-line">
-          Press Ctrl/⌘ + Enter in the editor.
+          Your name always maps to the same one of 50 question sets. Press Ctrl/⌘ + Enter to run SQL.
         </div>
       </div>
     </v-card-text>
@@ -42,15 +47,16 @@
 
 <script setup lang="ts">
 defineProps<{
-  seedInput: number
+  studentName: string
+  nameError: string
   solvedCount: number
   exerciseCount: number
 }>()
 
 defineEmits([
-  'build-exercises',
+  'generate-exercises',
   'toggle-instructor',
-  'update:seed-input',
+  'update:student-name',
 ])
 </script>
 
@@ -107,8 +113,15 @@ defineEmits([
   flex-wrap: wrap;
 }
 
-.seed-input {
-  max-width: 110px;
+.name-input {
+  min-width: 220px;
+  flex: 1 1 240px;
+}
+
+.name-error {
+  margin-top: 9px;
+  color: #fecaca;
+  font-size: 13px;
 }
 
 .score-box,
@@ -136,8 +149,8 @@ defineEmits([
     align-items: stretch;
   }
 
-  .seed-input {
-    max-width: none;
+  .name-input {
+    min-width: 0;
   }
 }
 </style>
