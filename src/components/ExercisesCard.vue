@@ -3,11 +3,15 @@
     <v-card-title class="pane-title">
       <div class="title-row">
         <span>Exercises</span>
-        <span class="seed-badge">Seed {{ currentSeed }}</span>
+        <span class="seed-badge">Set {{ currentSeed }} of 50</span>
       </div>
     </v-card-title>
 
     <v-card-text class="exercise-list">
+      <div v-if="!exercises.length" class="empty-state">
+        Enter your first name and select Generate Questions to begin.
+      </div>
+
       <v-btn
         v-if="instructorMode"
         variant="outlined"
@@ -148,6 +152,16 @@ defineEmits([
   border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 14px;
   padding: 16px;
+}
+
+.empty-state {
+  padding: 22px 16px;
+  border: 1px dashed rgba(148, 163, 184, 0.26);
+  border-radius: 14px;
+  color: rgba(229, 231, 235, 0.68);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
 }
 
 .exercise-header {

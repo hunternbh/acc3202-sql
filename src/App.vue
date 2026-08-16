@@ -1,28 +1,32 @@
 <template>
   <v-app>
     <v-main class="app-shell">
+      <AdvancedPage v-if="currentPage === 'advanced'" @back="showLab" />
+
       <v-container
+        v-else
         class="py-4"
         style="max-width: 1180px; padding-left: 16px; padding-right: 16px;"
       >
         <div class="hero-wrap mb-4">
-          <HeroSection />
+          <HeroSection @open-advanced="showAdvanced" />
           <div class="image-center">
             <img src="/frontpage.gif" alt="Cover" class="front-image" />
           </div>
         </div>
 
         <!-- Row 1: Seed / summary panel + Schema Browser -->
-        <v-row class="pane-grid" dense>
+        <v-row class="pane-grid" density="comfortable">
           <v-col cols="12" md="6">
             <div class="toolbar-wrap top-pane">
               <ControlPanel
-                :seed-input="seedInput"
+                :student-name="studentName"
+                :name-error="nameError"
                 :solved-count="solvedCount"
                 :exercise-count="exercises.length"
-                @build-exercises="() => buildExercises(seedInput)"
+                @generate-exercises="generateExercises"
                 @toggle-instructor="toggleInstructorMode"
-                @update:seed-input="seedInput = $event"
+                @update:student-name="studentName = $event"
               />
             </div>
           </v-col>
@@ -35,9 +39,9 @@
         </v-row>
 
         <!-- Row 2: Editor + Results stacked, Exercises on the right -->
-        <v-row class="pane-grid mt-1" dense>
+        <v-row class="pane-grid mt-1" density="comfortable">
           <v-col cols="12" md="8">
-            <v-row class="pane-grid" dense>
+            <v-row class="pane-grid" density="comfortable">
               <v-col cols="12">
                 <div class="pane-wrap bottom-pane-half editor-pane">
   <SqlEditorCard
@@ -83,8 +87,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import HeroSection from './components/HeroSection.vue'
+import AdvancedPage from './components/AdvancedPage.vue'
 import ControlPanel from './components/ControlPanel.vue'
 import SqlEditorCard from './components/SqlEditorCard.vue'
 import ResultsCard from './components/ResultsCard.vue'
@@ -93,7 +98,8 @@ import ExercisesCard from './components/ExercisesCard.vue'
 import { useSqlLab } from './composables/useSqlLab'
 
 const {
-  seedInput,
+  studentName,
+  nameError,
   currentSeed,
   instructorMode,
   editorText,
@@ -105,7 +111,7 @@ const {
   expandedExpected,
   exerciseStatus,
   solvedCount,
-  buildExercises,
+  generateExercises,
   toggleInstructorMode,
   runSql,
   exportAnswerKey,
@@ -114,6 +120,30 @@ const {
   copySql,
   expectedText,
 } = useSqlLab()
+
+const currentPage = ref<'lab' | 'advanced'>('lab')
+
+function syncPageFromHash() {
+  currentPage.value = window.location.hash === '#/advanced' ? 'advanced' : 'lab'
+  window.scrollTo({ top: 0 })
+}
+
+function showAdvanced() {
+  window.location.hash = '/advanced'
+}
+
+function showLab() {
+  window.location.hash = '/'
+}
+
+onMounted(() => {
+  syncPageFromHash()
+  window.addEventListener('hashchange', syncPageFromHash)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', syncPageFromHash)
+})
 
 const resultSummary = computed(() => {
   if (resultError.value) return 'Error'
