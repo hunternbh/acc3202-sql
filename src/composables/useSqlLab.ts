@@ -20,7 +20,7 @@ type Exercise = {
 
 const SQL_WASM_PATH = `${import.meta.env.BASE_URL}sql-wasm.wasm`
 const DEFAULT_DB_PATH = `${import.meta.env.BASE_URL}sf_accounting.db`
-const INSTRUCTOR_PIN = '7425'
+const EASTER_EGG_CODE = '32022'
 const MAX_SEED = 50
 
 export function useSqlLab() {
@@ -321,52 +321,59 @@ ORDER BY name;`)
     }
 
     const station = choice(rng, stations)
+    const summaryStation = choice(rng, stations)
     const ymA = choice(rng, months)
     const laterMonths = months.filter((m) => m >= ymA)
     const ymB = laterMonths.length ? choice(rng, laterMonths) : ymA
     const currency = rng() < 0.2 ? 'SOL' : 'CRD'
     const topN = intBetween(rng, 3, 5)
-    const vendor = choice(rng, vendors)
     const cutMonth = choice(rng, months)
 
     const questionSet: Exercise[] = [
       {
         id: `q1_${currentSeed.value}`,
         title: `Aggregate cargo revenue at ${station}`,
-        prompt: `Practice SUM, CASE, and ROUND. Return one column named cargo_rev with total cargo revenue (account 4000) at station "${station}" from ${ymA} through ${ymB}, using ${currency}.`,
+        prompt: `Practice SUM inside a business filter. Return one column named cargo_rev with total cargo revenue (account 4000) at station "${station}" from ${ymA} through ${ymB}, using ${currency}.`,
         sql: `
-SELECT ROUND(SUM(CASE WHEN account_no=4000 THEN credit - debit ELSE 0 END),2) AS cargo_rev
+SELECT SUM(credit - debit) AS cargo_rev
 FROM sf_ledger
 WHERE station = '${station}'
   AND currency = '${currency}'
+  AND account_no = 4000
   AND je_date BETWEEN '${ymA}-01' AND '${ymB}-31';`,
       },
       {
         id: `q2_${currentSeed.value}`,
         title: `Top ${topN} vendors in ${cutMonth}`,
-        prompt: `Practice COALESCE, COUNT, and ROUND. List the top ${topN} vendors paid in ${cutMonth}. Return vendor_name, payment_count, and total_paid, sorted by total_paid descending.`,
+        prompt: `Practice COUNT and SUM with a join. List the top ${topN} vendors paid in ${cutMonth}. Return vendor_name, payment_count, and total_paid, sorted by total_paid descending.`,
         sql: `
-SELECT COALESCE(p.name, 'Unknown') AS vendor_name,
+SELECT p.name AS vendor_name,
        COUNT(DISTINCT l.doc_id) AS payment_count,
-       ROUND(SUM(CASE WHEN l.account_no=1000 THEN l.credit - l.debit ELSE 0 END),2) AS total_paid
+       SUM(l.credit - l.debit) AS total_paid
 FROM sf_ledger AS l
-LEFT JOIN sf_parties AS p ON p.party_id = l.party_id
+JOIN sf_parties AS p ON p.party_id = l.party_id
 WHERE l.doc_type='PAYMENT'
-  AND substr(l.je_date,1,7)='${cutMonth}'
+  AND l.account_no=1000
+  AND l.je_date BETWEEN '${cutMonth}-01' AND '${cutMonth}-31'
 GROUP BY l.party_id, p.name
 ORDER BY total_paid DESC, vendor_name
 LIMIT ${topN};`,
       },
       {
         id: `q3_${currentSeed.value}`,
-        title: `Format vendor ${vendor[1]}`,
-        prompt: `Practice UPPER, TRIM, and LENGTH. For party_id ${vendor[0]}, return party_id, the trimmed name in uppercase as vendor_name, and the trimmed name length as name_length.`,
+        title: `Station activity summary for ${summaryStation}`,
+        prompt: `Practice COUNT, MIN, MAX, and AVG inside a grouped accounting summary. For station "${summaryStation}" from ${ymA} through ${ymB}, return account_no, entry_count, min_debit, max_credit, and avg_debit. Sort by account_no.`,
         sql: `
-SELECT party_id,
-       UPPER(TRIM(name)) AS vendor_name,
-       LENGTH(TRIM(name)) AS name_length
-FROM sf_parties
-WHERE party_id=${vendor[0]};`,
+SELECT account_no,
+       COUNT(*) AS entry_count,
+       MIN(debit) AS min_debit,
+       MAX(credit) AS max_credit,
+       AVG(debit) AS avg_debit
+FROM sf_ledger
+WHERE station='${summaryStation}'
+  AND je_date BETWEEN '${ymA}-01' AND '${ymB}-31'
+GROUP BY account_no
+ORDER BY account_no;`,
       },
     ]
 
@@ -424,11 +431,13 @@ WHERE party_id=${vendor[0]};`,
   }
 
   function toggleInstructorMode() {
-    const pin = prompt('Enter instructor PIN:')
-    if (pin === INSTRUCTOR_PIN) {
-      instructorMode.value = !instructorMode.value
+    const code = prompt('Enter Easter Egg code:')
+    if (code === EASTER_EGG_CODE) {
+      alert(
+        'Easter Egg unlocked. The code is joyful-learning. Put joyful-learning at the top of your assignment to unlock more lenient grading.',
+      )
     } else {
-      alert('Incorrect PIN.')
+      alert('Not quite. Keep exploring.')
     }
   }
 

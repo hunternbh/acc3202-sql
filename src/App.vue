@@ -15,10 +15,19 @@
           </div>
         </div>
 
-        <!-- Row 1: Seed / summary panel + Schema Browser -->
+        <!-- Row 1: Schema Browser on its own layer -->
         <v-row class="pane-grid" density="comfortable">
-          <v-col cols="12" md="6">
-            <div class="toolbar-wrap top-pane">
+          <v-col cols="12">
+            <div class="pane-wrap schema-layer">
+              <SchemaCard :schema-text="schemaText" />
+            </div>
+          </v-col>
+        </v-row>
+
+        <!-- Row 2: Question generator on its own horizontal layer -->
+        <v-row class="pane-grid mt-1" density="comfortable">
+          <v-col cols="12">
+            <div class="toolbar-wrap generator-layer">
               <ControlPanel
                 :student-name="studentName"
                 :name-error="nameError"
@@ -30,15 +39,9 @@
               />
             </div>
           </v-col>
-
-          <v-col cols="12" md="6">
-            <div class="pane-wrap top-pane">
-              <SchemaCard :schema-text="schemaText" />
-            </div>
-          </v-col>
         </v-row>
 
-        <!-- Row 2: Editor + Results stacked, Exercises on the right -->
+        <!-- Row 3: Editor + Results stacked, Exercises on the right -->
         <v-row class="pane-grid mt-1" density="comfortable">
           <v-col cols="12" md="8">
             <v-row class="pane-grid" density="comfortable">
@@ -176,8 +179,12 @@ const resultSummary = computed(() => {
   overflow: hidden;
 }
 
-.top-pane {
-  min-height: 320px;
+.schema-layer {
+  min-height: 260px;
+}
+
+.generator-layer {
+  min-height: 170px;
   height: 100%;
 }
 

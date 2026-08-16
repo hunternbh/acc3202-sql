@@ -24,7 +24,7 @@
               Generate Questions
             </v-btn>
             <v-btn variant="outlined" @click="$emit('toggle-instructor')">
-              Instructor
+              Easter Egg
             </v-btn>
           </div>
 
@@ -68,9 +68,7 @@ defineEmits([
 }
 
 .toolbar-root {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: 1fr;
+  display: block;
 }
 
 .toolbar-group {
